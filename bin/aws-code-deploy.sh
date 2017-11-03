@@ -143,8 +143,7 @@ if [ -z "$AWS_CODE_DEPLOY_DEPLOYMENT_GROUP_NAME" ]; then
 fi
 
 if [ -z "$AWS_CODE_DEPLOY_APP_SOURCE" ]; then
-  error "Please set the \"\$AWS_CODE_DEPLOY_APP_SOURCE\" to a pre-packaged bundle or a directory to be deployed"
-  exit 1
+  AWS_CODE_DEPLOY_APP_SOURCE="infrastructure/codedeploy"
 fi
 
 if [ -z "$AWS_CODE_DEPLOY_S3_BUCKET" ]; then
@@ -327,7 +326,9 @@ h1 "Step 6: Checking Application Source"
 APP_SOURCE=$(readlink -f "${AWS_CODE_DEPLOY_APP_SOURCE:-.}")
 
 if [ ! -d "$APP_SOURCE" -a ! -e "$APP_SOURCE" ]; then
-  APP_SOURCE="infrastructure/codedeploy"
+  # Note: Use original variable for output as the readlink can potentially evaluate to ""
+  error "The specified application source \"${AWS_CODE_DEPLOY_APP_SOURCE}\" does not exist."
+  exit 1
 fi
 if [ -d "$APP_SOURCE" ]; then
   if [ ! -e "$APP_SOURCE/appspec.yml" ]; then
