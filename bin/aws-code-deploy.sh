@@ -153,8 +153,7 @@ if [ -z "$AWS_CODE_DEPLOY_S3_BUCKET" ]; then
 fi
 
 if [ -z "$AWS_CODE_DEPLOY_S3_FILENAME" ]; then
-  error "Please set the \"\$AWS_CODE_DEPLOY_S3_FILENAME\" variable"
-  exit 1
+  AWS_CODE_DEPLOY_S3_FILENAME="${APPLICATION_NAME}/${APPLICATION_NAME}-${CIRCLE_BRANCH}-b${CIRCLE_BUILD_NUM}-c${CIRCLE_SHA1}.zip"
 fi
 
 
@@ -217,8 +216,8 @@ fi
 if [ -z "$AWS_CODE_DEPLOY_REGION" ]; then
   # Ensure AWS region has already been set
   if [ $(aws configure list | grep region | wc -l) -lt 1 ]; then
-    error "No AWS_CODE_DEPLOY_REGION specified and AWS cli is not configured with an existing default region via env, config, or shared credentials"
-    exit 1
+    $(aws configure set default.region us-west-2 2>&1)
+    success "Successfully configured us-west-2 as the default AWS region."
   fi
   success "AWS Region already configured."
 else
@@ -328,9 +327,7 @@ h1 "Step 6: Checking Application Source"
 APP_SOURCE=$(readlink -f "${AWS_CODE_DEPLOY_APP_SOURCE:-.}")
 
 if [ ! -d "$APP_SOURCE" -a ! -e "$APP_SOURCE" ]; then
-  # Note: Use original variable for output as the readlink can potentially evaluate to ""
-  error "The specified application source \"${AWS_CODE_DEPLOY_APP_SOURCE}\" does not exist."
-  exit 1
+  APP_SOURCE="infrastructure/codedeploy"
 fi
 if [ -d "$APP_SOURCE" ]; then
   if [ ! -e "$APP_SOURCE/appspec.yml" ]; then
@@ -476,6 +473,10 @@ runCommand "${REGISTER_APP_CMD}" \
 # see documentation http://docs.aws.amazon.com/cli/latest/reference/deploy/create-deployment.html
 # ----------------------
 DEPLOYMENT_DESCRIPTION="$AWS_CODE_DEPLOY_DEPLOYMENT_DESCRIPTION"
+if [ ! -z "${AWS_CODE_DEPLOY_DEPLOYMENT_DESCRIPTION}" ]; then
+    DEPLOYMENT_DESCRIPTION="Deployed via CircleCI on $(date)"
+fi
+
 h1 "Step 10: Creating Deployment"
 DEPLOYMENT_CMD="aws deploy create-deployment --output json --application-name $APPLICATION_NAME --deployment-config-name $DEPLOYMENT_CONFIG_NAME --deployment-group-name $DEPLOYMENT_GROUP --s3-location $S3_LOCATION"
 
@@ -546,7 +547,7 @@ if [ "true" == "$DEPLOYMENT_OVERVIEW" ]; then
 
       # Print Failed Details
       if [ "$STATUS" == "Failed" ]; then
-        printf "${status_opts}Status${reset}  | In Progress: $IN_PROGRESS  | Pending: $PENDING  | Skipped: $SKIPPED  | Succeeded: $SUCCEEDED  | Failed: $FAILED  | \n\n"       
+        printf "${status_opts}Status${reset}  | In Progress: $IN_PROGRESS  | Pending: $PENDING  | Skipped: $SKIPPED  | Succeeded: $SUCCEEDED  | Failed: $FAILED  | \n\n"
         error "Deployment failed: $ERROR_MESSAGE"
 
         # Retrieve failed instances. Use text output here to easier retrieve array. Output format:
