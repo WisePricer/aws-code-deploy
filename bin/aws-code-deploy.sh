@@ -214,7 +214,7 @@ fi
 
 if [ -z "$AWS_CODE_DEPLOY_REGION" ]; then
   # Ensure AWS region has already been set
-  if [ $(aws configure list | grep region | wc -l) -lt 1 ]; then
+  if [ $(aws configure list | grep region | grep "not set" | wc -l) -eq 1 ]; then
     $(aws configure set default.region us-west-2 2>&1)
     success "Successfully configured us-west-2 as the default AWS region."
   fi
