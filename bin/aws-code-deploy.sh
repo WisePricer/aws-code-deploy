@@ -152,7 +152,7 @@ if [ -z "$AWS_CODE_DEPLOY_S3_BUCKET" ]; then
 fi
 
 if [ -z "$AWS_CODE_DEPLOY_S3_FILENAME" ]; then
-  AWS_CODE_DEPLOY_S3_FILENAME="${APPLICATION_NAME}/${APPLICATION_NAME}-${CIRCLE_BRANCH}-b${CIRCLE_BUILD_NUM}-c${CIRCLE_SHA1}.zip"
+  AWS_CODE_DEPLOY_S3_FILENAME="${AWS_CODE_DEPLOY_APPLICATION_NAME}/${AWS_CODE_DEPLOY_APPLICATION_NAME}-${CIRCLE_BRANCH}-b${CIRCLE_BUILD_NUM}-c${CIRCLE_SHA1}.zip"
 fi
 
 
@@ -217,8 +217,9 @@ if [ -z "$AWS_CODE_DEPLOY_REGION" ]; then
   if [ $(aws configure list | grep region | grep "not set" | wc -l) -eq 1 ]; then
     $(aws configure set default.region us-west-2 2>&1)
     success "Successfully configured us-west-2 as the default AWS region."
+  else
+    success "AWS Region already configured."
   fi
-  success "AWS Region already configured."
 else
   $(aws configure set default.region $AWS_CODE_DEPLOY_REGION 2>&1)
   success "Successfully configured AWS default region."
